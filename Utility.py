@@ -33,6 +33,10 @@ def cpg(T, f):
         raise ValueError("The fuel-to-air ratio f must be positive.")
     return cpa(T) + Bt(T) * (f) / (f+1)
 
+def compute_entropy(T, p):
+    return cpa(T)*np.log(T) - Rstar*np.log(p)
+
+
 def equations2(vars, ps2, ps3, Tt2, T3, u3):
     u2, T2 = vars
 
@@ -61,7 +65,7 @@ def state3eq(vars, Tt3, pt3, ps3):
 def state4eq(vars, Tt4, T3, u3, ps3, pt4, mdot_f, mdot_0):
     T4, u4, ps4 = vars
     f = mdot_f/mdot_0
-    eq1 = ps3/T3 * u3*A3 - ps4/T4*u4*A4 + mdot_f
+    eq1 = ps3/(T3*Rstar) * u3*A3 - ps4/(T4*Rstar)*u4*A4 + mdot_f
     eq2 = T4 - (Tt4 - u4/(2*cpg(T4,f)))
     eq3 = pt4 - ps4 * (1 + 1/(Rstar*T4)*u4*u4/2)
     return [eq1, eq2, eq3]
@@ -133,8 +137,8 @@ def solve_state5(u6,T6,ps6,pt6):
     pt5 = pt6  # Conservation de la pression totale dans un écoulement isentropique
     u5 = M5 * np.sqrt(gamma * Rstar * T5)
     Tt5 = T5 * (1 + (gamma - 1) / 2 * M5**2)
-    ps5 = ps5.item()
 
+    ps5 = ps5.item()
     T5 = T5.item()
     u5 = u5.item()
     return  ps5, T5, u5
@@ -147,17 +151,31 @@ def find_T6(T6, Tt6, u6, f):
     eq1 = Tt6/T6 - (1+ (gamma-1)/2 * u6*u6/(gamma*Rstar*T6))
     return eq1
 
+
+def find_T6bis(vars, pt6, T, Tt6):
+    mdot_6, u6, ps6, T6 = vars
+    eq1 = T - mdot_6*u6
+    eq2 = mdot_6 - ps6/(Rstar*T6) * u6 * A6
+    eq3 = Tt6 - T6*(1 + (gamma-1)/2*u6*u6/(gamma*Rstar*T6))
+    eq4 = pt6 - ps6*(Tt6/T6)**(gamma/(gamma-1))
+    return [eq1, eq2, eq3, eq4]
+
 def solve_state6(ps1, T1, u1, Tt6, pt6, mdot_f, Thrust):
-    mdot_0 = ps1/(Rstar*T1)*u1*A1
-    mdot_e = mdot_0 + mdot_f
-    u6 = Thrust/mdot_e
+
+
+    # mdot_0 = ps1/(Rstar*T1)*u1*A1
+    # mdot_e = mdot_0 + mdot_f
+    # u6 = Thrust/mdot_e
+    # f = mdot_f/mdot_0
+    # initial_guess = 400
+    # T6 = fsolve(find_T6, initial_guess, args=(Tt6, u6, f))
+
     
-    f = mdot_f/mdot_0
+    initial_guess = [1.0, 300, 100000, 500]
+    mdot_6, u6, ps6, T6 = fsolve(find_T6bis, initial_guess, args=(pt6, Thrust, Tt6))
 
-    initial_guess = 400
-    T6 = fsolve(find_T6, initial_guess, args=(Tt6, u6, f))
 
-    ps6 = pt6*(Tt6/T6)**(-gamma/(gamma-1))
+    # ps6 = pt6*(Tt6/T6)**(-gamma/(gamma-1))
 
     ps6 = ps6.item()
     T6 = T6.item()
