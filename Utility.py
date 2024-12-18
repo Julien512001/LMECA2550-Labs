@@ -137,9 +137,6 @@ def solve_state5(u6,T6,ps6,pt6):
 
     T5 = T5.item()
     u5 = u5.item()
-
-    print("T5 = {}".format(T5))
-    print("M6 = {}".format(M6))
     return  ps5, T5, u5
 
 
@@ -165,6 +162,5 @@ def solve_state6(ps1, T1, u1, Tt6, pt6, mdot_f, Thrust):
     ps6 = ps6.item()
     T6 = T6.item()
     u6 = u6.item()
-    print("T6 = {}".format(T6))
-
+    
     return ps6, T6, u6

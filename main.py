@@ -12,7 +12,11 @@ def main():
     # RPM = 50000 : 50
     # Ainsi de suite
 
-    States(Regime=37)
+    RPM = np.array([37, 50, 60, 70, 80, 90, 100])
+
+    for elem in RPM:
+        States(Regime=elem)
+        
 
     
 
