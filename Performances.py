@@ -26,8 +26,6 @@ def polytropic():
         tau_c, pi_c = df['c']
         tau_t, pi_t = df['t']
 
-        print(tau_c, pi_c)
-        print(tau_t, pi_t)
         ec[i] = (gamma-1)/gamma * np.log(pi_c)/np.log(tau_c)
         eta_c[i] = (pi_c**((gamma-1)/gamma) - 1 )/(tau_c - 1)
         et[i] = gamma/(gamma-1) * np.log(tau_t)/np.log(pi_t)
@@ -82,6 +80,7 @@ def massFlowRate():
     plt.legend()
     plt.grid()
 
+    plt.figure()
     plt.scatter(RPM, mdot_t)
     plt.plot(RPM, mdot_t, label='mdot_t')
     plt.ylim(0.0)
@@ -93,13 +92,32 @@ def massFlowRate():
 
 
 def TS_diagram():
-    RPM = np.array([37, 90])
+    RPM = np.array([37, 50, 60, 70, 80, 90, 100])
     for i in range(len(RPM)):
         filename = f"dataR/States/States_RPM{RPM[i]}.csv"
         df = pd.read_csv(filename)
 
-        state0 = df['State0']
-        print(state0)
+        states = np.array(df)
+        
+        T = np.zeros(7)
+        s = np.zeros(7)
+
+        for i in range(len(T)):
+            T[i] = states[2, i]
+            s[i] = states[5, i]
+
+
+        plt.figure()
+        plt.scatter(s, T)
+        plt.plot(s, T)
+        for i in range(len(T)):
+            plt.text(s[i], T[i], str(i), fontsize=10, color="red", ha="right", va="bottom")
+
+        plt.xlabel("Entropy (s)")
+        plt.ylabel("Temperature (T)")
+        plt.title(f"Temperature vs Entropy for RPM {RPM}")
+        plt.grid(True)
+    plt.show()
     
     
     

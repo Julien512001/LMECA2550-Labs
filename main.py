@@ -18,16 +18,19 @@ def main():
     # States(Regime=37)
 
 
-    # for elem in RPM:
-    #     States(Regime=elem)
-    
-    # for elem in RPM:
-    #     ratios = Ratios(Regime=elem)
+    for elem in RPM:
+        States(Regime=elem)
+
+
+
+    for elem in RPM:
+        ratios = Ratios(Regime=elem)
     
 
-    # polytropic()
-    # massFlowRate()
+    polytropic()
+    massFlowRate()
 
+    # TS_diagram()
 
     return 0
 

@@ -33,18 +33,24 @@ def cpg(T, f):
         raise ValueError("The fuel-to-air ratio f must be positive.")
     return cpa(T) + Bt(T) * (f) / (f+1)
 
-def compute_entropy(T, p):
-    return cpa(T)*np.log(T) - Rstar*np.log(p)
 
 
-def equations2(vars, ps2, ps3, Tt2, T3, u3):
-    u2, T2 = vars
+def get_f(mdot_f, ps1, T1, u1):
 
-    eq1 = ps2 * (u2 / (Rstar * T2)) * A2 - ps3 * (u3 / (Rstar * T3)) * A3
-    # eq2 = Tt2 / T2 - (1 + ((gamma - 1) / (2 * gamma)) * (u2**2) / (Rstar * T2))
-    eq2 = Tt2 - T2 - (u2**2) / (2 * cpa(T2))
+    mdot_0 = ps1/(Rstar*T1)*u1*A1
+    f = mdot_f/mdot_0
 
-    return [eq1, eq2]
+    return f
+
+def compute_entropy(T, p, State, mdot_f=None, ps1=None, T1=None, u1=None):
+    if State in (0, 1, 2, 3):
+        cp = cpa(T)
+    else:
+        f = get_f(mdot_f, ps1, T1, u1)
+        cp = cpg(T, f)
+
+    return cp*np.log(T) - Rstar*np.log(p)
+
 
 def area_mach_relation(M, A_A_star):
     gamma=1.4
@@ -56,129 +62,133 @@ def trouveM(A):
     M_solution, = fsolve(area_mach_relation, M_guess, args=(A_A_star,))
     return M_solution
 
-def state3eq(vars, Tt3, pt3, ps3):
-    T3, u3 = vars
-    eq1 = Tt3 - (T3 + u3**2 / (2 * cpa(T3)))
-    eq2 = pt3 - ps3 * (1 + u3**2 / (2 * Rstar * T3))**(gamma / (gamma - 1))
-    return [eq1, eq2]
+def f_func(M):
+    A = (gamma+1)/2
+    B = 1 + (gamma-1)/2 *M*M
+    C = (gamma+1)/(2*(gamma-1))
 
-def state4eq(vars, Tt4, T3, u3, ps3, pt4, mdot_f, mdot_0):
-    T4, u4, ps4 = vars
-    f = mdot_f/mdot_0
-    eq1 = ps3/(T3*Rstar) * u3*A3 - ps4/(T4*Rstar)*u4*A4 + mdot_f
-    eq2 = T4 - (Tt4 - u4/(2*cpg(T4,f)))
-    eq3 = pt4 - ps4 * (1 + 1/(Rstar*T4)*u4*u4/2)
-    return [eq1, eq2, eq3]
+    return np.power(A/B, C)*M
 
 
-def solve_state1(u2,T2,ps2,pt2):
-    # Étape 1 : Calcul de M2 (Mach en sortie)
-    M2 = u2 / np.sqrt(gamma * Rstar * T2)
-    Astar  = A2 / (((gamma + 1) / 2)**(-(gamma + 1) / (2 * (gamma - 1))) * 
-                   (1 + (gamma - 1) / 2 * M2**2)**((gamma + 1) / (2 * (gamma - 1))) / M2)
-    # Étape 2 : Calcul du rapport d'aire A1/A2 et M1
-    A_ratio = A1/Astar
-    
-    M1 = trouveM(A_ratio)
 
-    # Étape 3 : Utiliser les relations isentropiques pour trouver les autres paramètres à l'entrée
-    T1 = T2 * (1 + (gamma - 1) / 2 * M1**2) / (1 + (gamma - 1) / 2 * M2**2)
 
-    ps1 = ps2 * (1 + (gamma - 1) / 2 * M1**2)**(-gamma / (gamma - 1)) / (1 + (gamma - 1) / 2 * M2**2)**(-gamma / (gamma - 1))
-    
-    pt1 = pt2  # Conservation de la pression totale dans un écoulement isentropique
-    u1 = M1 * np.sqrt(gamma * Rstar * T1)
-    Tt1 = T1 * (1 + (gamma - 1) / 2 * M1**2)
+
+
+def solve_state1(u2,T2,ps2,pt2, Tt2):
+
+    Tt1 = Tt2
+    pt1 = pt2
+
+    M2 = u2/np.sqrt(gamma*Rstar*T2)
+    Astar = A2*f_func(M2)
+    M1 = trouveM(A1/Astar)
+
+    T1 = Tt1*np.power(1+ (gamma-1)/2*M1*M1, -1)
+    ps1 = pt1*np.power(Tt1/T1, -gamma/(gamma-1))
+    u1 = M1*np.sqrt(gamma*Rstar*T1)
 
     return  ps1, T1, u1
 
-def solve_state2(ps2, ps3, Tt2, T3, u3):
+
+
+
+
+def equations2(vars, ps2, Tt2, pt2):
+    u2, T2 = vars
+
+    # eq1 = ps2 * (u2 / (Rstar * T2)) * A2 - ps3 * (u3 / (Rstar * T3)) * A3
+    # eq2 = Tt2/T2 - (1 + (gamma-1)/gamma * (u2**2) / (2*Rstar*T2))
+    eq1 = Tt2/T2 - (1 + (gamma-1)/2 * (u2*u2)/(gamma*Rstar*T2))
+    eq2 = pt2/ps2 - (1 + (gamma-1)/2 * (u2*u2)/(gamma*Rstar*T2))**(gamma/(gamma-1))
+
+    return [eq1, eq2]
+
+def solve_state2(ps2, Tt2, pt2):
     initial_guess = [300, 500]
-    sol = fsolve(equations2, initial_guess, args=(ps2, ps3, Tt2, T3, u3))
+    sol = fsolve(equations2, initial_guess, args=(ps2, Tt2, pt2))
     u2_sol, T2_sol = sol
 
     return T2_sol, u2_sol
 
 
-def solve_state3(Tt3, pt3, ps3):
-    initial_guess = [500, 300]  # Estimations initiales pour T3 (K) et u3 (m/s)
-    sol = fsolve(state3eq, initial_guess, args=(Tt3, pt3, ps3))
+
+
+
+def equations3(vars, Tt3, ps3, ps2, T2, u2):
+    T3, u3 = vars
+    eq1 = Tt3 - (T3 + u3**2 / (2 * cpa(T3)))
+    eq2 = ps2/(Rstar*T2)*u2*A2 - ps3/(Rstar*T3)*u3*A3
+    return [eq1, eq2]
+
+def solve_state3(Tt3, ps3, ps2, T2, u2):
+    initial_guess = [500, 300]
+    sol = fsolve(equations3, initial_guess, args=(Tt3, ps3, ps2, T2, u2))
     T3_sol, u3_sol = sol
 
     return T3_sol, u3_sol
 
-def solve_state4(Tt4, T3, u3, pt4, ps3, mdot_f, ps1, T1, u1, simplified=True):
-    mdot_0 = ps1/(Rstar*T1)*u1*A1
 
-    initial_guess = [500, 300, 100000]
-    sol = fsolve(state4eq, initial_guess, args=(Tt4, T3, u3, ps3, pt4, mdot_f, mdot_0))
-    T4_sol, u4_sol, ps4_sol = sol
+
+
+
+
+def state4eq(vars, Tt4, T3, u3, ps3, ps4, mdot_f, mdot_0):
+    T4, u4 = vars
+    f = mdot_f/mdot_0
+    eq1 = ps3/T3 * u3*A3 - ps4/T4*u4*A4 + mdot_f
+    eq2 = T4 - (Tt4 - u4/(2*cpg(T4,f)))
+    return [eq1, eq2]
+    
+def solve_state4(Tt4, T3, u3, ps3, mdot_f, mdot_0):
+
+    ps4 = ps3
+    initial_guess = [500, 300]
+    sol = fsolve(state4eq, initial_guess, args=(Tt4, T3, u3, ps3, ps4, mdot_f, mdot_0))
+    T4_sol, u4_sol = sol
     
     T4_sol = T4_sol.item()
     u4_sol = u4_sol.item()
-    ps4_sol = ps4_sol.item()
-    return T4_sol, u4_sol, ps4_sol
 
-def solve_state5(u6,T6,ps6,pt6):
-    # Étape 1 : Calcul de M2 (Mach en sortie)
-    M6 = u6 / np.sqrt(gamma * Rstar * T6)
-    Astar  = A6 / (((gamma + 1) / 2)**(-(gamma + 1) / (2 * (gamma - 1))) * 
-                   (1 + (gamma - 1) / 2 * M6**2)**((gamma + 1) / (2 * (gamma - 1))) / M6)
-    # Étape 2 : Calcul du rapport d'aire A1/A2 et M1
-    A_ratio = A1/Astar
-    
-    M5 = trouveM(A_ratio)
+    return T4_sol, u4_sol
 
-    # Étape 3 : Utiliser les relations isentropiques pour trouver les autres paramètres à l'entrée
-    T5 = T6 * (1 + (gamma - 1) / 2 * M5**2) / (1 + (gamma - 1) / 2 * M6**2)
 
-    ps5 = ps6 * (1 + (gamma - 1) / 2 * M5**2)**(-gamma / (gamma - 1)) / (1 + (gamma - 1) / 2 * M6**2)**(-gamma / (gamma - 1))
-    
-    pt5 = pt6  # Conservation de la pression totale dans un écoulement isentropique
-    u5 = M5 * np.sqrt(gamma * Rstar * T5)
-    Tt5 = T5 * (1 + (gamma - 1) / 2 * M5**2)
 
-    ps5 = ps5.item()
-    T5 = T5.item()
-    u5 = u5.item()
+
+
+
+
+
+def solve_state5(u6,T6,ps6,pt6, Tt6):
+
+    Tt5 = Tt6
+    pt5 = pt6
+
+    M6 = u6/np.sqrt(gamma*Rstar*T6)
+    Astar = A6*f_func(M6)
+    M5 = trouveM(A5/Astar)
+
+    T5 = Tt5*np.power(1+ (gamma-1)/2*M5*M5, -1)
+    ps5 = pt5*np.power(Tt5/T5, -gamma/(gamma-1))
+    u5 = M5*np.sqrt(gamma*Rstar*T5)
+
     return  ps5, T5, u5
 
 
-def find_T6(T6, Tt6, u6, f):
-    # Quelle équation utiliser ???
+def find_T6(vars, Tt6, T, ps6):
+    T6, u6, mdot_6 = vars
 
-    # eq1 = T6 - (Tt6 - u6*u6/(2*cpg(T6, f)))
-    eq1 = Tt6/T6 - (1+ (gamma-1)/2 * u6*u6/(gamma*Rstar*T6))
-    return eq1
+    eq1 = Tt6/T6 - (1 + (gamma-1)/2 * u6*u6/(gamma*Rstar*T6))
+    eq2 = T - mdot_6*u6
+    eq3 = mdot_6 - ps6/(Rstar*T6)*u6*A6
+    return [eq1, eq2, eq3]
 
+def solve_state6(Tt6, Thrust, ps6):
 
-def find_T6bis(vars, pt6, T, Tt6):
-    mdot_6, u6, ps6, T6 = vars
-    eq1 = T - mdot_6*u6
-    eq2 = mdot_6 - ps6/(Rstar*T6) * u6 * A6
-    eq3 = Tt6 - T6*(1 + (gamma-1)/2*u6*u6/(gamma*Rstar*T6))
-    eq4 = pt6 - ps6*(Tt6/T6)**(gamma/(gamma-1))
-    return [eq1, eq2, eq3, eq4]
+    initial_guess = [400, 300, 1.0]
+    T6, u6, mdot_6 = fsolve(find_T6, initial_guess, args=(Tt6, Thrust, ps6))
 
-def solve_state6(ps1, T1, u1, Tt6, pt6, mdot_f, Thrust):
-
-
-    # mdot_0 = ps1/(Rstar*T1)*u1*A1
-    # mdot_e = mdot_0 + mdot_f
-    # u6 = Thrust/mdot_e
-    # f = mdot_f/mdot_0
-    # initial_guess = 400
-    # T6 = fsolve(find_T6, initial_guess, args=(Tt6, u6, f))
-
-    
-    initial_guess = [1.0, 300, 100000, 500]
-    mdot_6, u6, ps6, T6 = fsolve(find_T6bis, initial_guess, args=(pt6, Thrust, Tt6))
-
-
-    # ps6 = pt6*(Tt6/T6)**(-gamma/(gamma-1))
-
-    ps6 = ps6.item()
     T6 = T6.item()
     u6 = u6.item()
-    
-    return ps6, T6, u6
+    print(f"mdot_6 = {mdot_6}")
+
+    return T6, u6
