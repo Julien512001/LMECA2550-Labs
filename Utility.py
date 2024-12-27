@@ -189,6 +189,5 @@ def solve_state6(Tt6, Thrust, ps6):
 
     T6 = T6.item()
     u6 = u6.item()
-    print(f"mdot_6 = {mdot_6}")
 
     return T6, u6

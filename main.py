@@ -10,12 +10,16 @@ from Performances import *
 def main():
 
     #######
-    # RPM = 37000 : 37
-    # RPM = 50000 : 50
+    # RPM = 37000 :     37
+    # RPM = 50000 :     50
+    # RPM = 60000 :     60
+    # RPM = 70000 :     70
+    # RPM = 80000 :     80
+    # RPM = 90000 :     90
+    # RPM = 100000 :    100
     # Ainsi de suite
 
     RPM = np.array([37, 50, 60, 70, 80, 90, 100])
-    # States(Regime=37)
 
 
     for elem in RPM:
@@ -27,8 +31,8 @@ def main():
         ratios = Ratios(Regime=elem)
     
 
-    polytropic()
-    massFlowRate()
+    # polytropic()
+    # massFlowRate()
 
     # TS_diagram()
 

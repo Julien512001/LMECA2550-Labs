@@ -30,14 +30,6 @@ class States:
         self.state5()
         self.state4()
 
-
-        print(f" mdot_e = {self.ps6/(Rstar*self.T6)*self.u6*self.A6}")
-        print(f" mdot_0 : {self.ps6/(Rstar*self.T6)*self.u6*self.A6 - self.mdot_f}")
-        print(f" mdot_2 = {self.ps2/(Rstar*self.T2)*self.u2*self.A2}")
-        print(f" mdot_3 = {self.ps3/(Rstar*self.T3)*self.u3*self.A3}")
-        print(f" mdot_4 = {self.ps4/(Rstar*self.T4)*self.u4*self.A4}")
-
-
         self.__write_states()
 
     def state0(self):
@@ -102,7 +94,7 @@ class States:
         return np.array([self.ps6, self.pt6, self.T6, self.Tt6, self.u6, self.s6])
     
     def get_mdot_0(self):
-        return (self.ps3/(Rstar*self.T3)*self.u3*A3)
+        return (self.ps1/(Rstar*self.T1)*self.u1*A1)
 
 
     def __write_states(self):
