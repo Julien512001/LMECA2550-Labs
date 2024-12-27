@@ -96,8 +96,6 @@ def solve_state1(u2,T2,ps2,pt2, Tt2):
 def equations2(vars, ps2, Tt2, pt2):
     u2, T2 = vars
 
-    # eq1 = ps2 * (u2 / (Rstar * T2)) * A2 - ps3 * (u3 / (Rstar * T3)) * A3
-    # eq2 = Tt2/T2 - (1 + (gamma-1)/gamma * (u2**2) / (2*Rstar*T2))
     eq1 = Tt2/T2 - (1 + (gamma-1)/2 * (u2*u2)/(gamma*Rstar*T2))
     eq2 = pt2/ps2 - (1 + (gamma-1)/2 * (u2*u2)/(gamma*Rstar*T2))**(gamma/(gamma-1))
 
@@ -136,7 +134,7 @@ def state4eq(vars, Tt4, T3, u3, ps3, ps4, mdot_f, mdot_0):
     T4, u4 = vars
     f = mdot_f/mdot_0
     eq1 = ps3/T3 * u3*A3 - ps4/T4*u4*A4 + mdot_f
-    eq2 = T4 - (Tt4 - u4/(2*cpg(T4,f)))
+    eq2 = Tt4 - (T4 + u4*u4/(2*cpg(T4,f)))
     return [eq1, eq2]
     
 def solve_state4(Tt4, T3, u3, ps3, mdot_f, mdot_0):
@@ -189,5 +187,8 @@ def solve_state6(Tt6, Thrust, ps6):
 
     T6 = T6.item()
     u6 = u6.item()
+
+
+    print(f"mdot_6 = {mdot_6}")
 
     return T6, u6

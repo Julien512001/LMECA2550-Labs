@@ -26,7 +26,7 @@ class Parameters:
         Tt6 = df.iloc[:,13].to_numpy() + 273.15
 
         Thrust = df.iloc[:,15].to_numpy()
-        # Thrust = Thrust - np.abs(Thrust[0])
+        Thrust = Thrust - np.abs(Thrust[0])
 
         RPM = df.iloc[:,16].to_numpy()
         

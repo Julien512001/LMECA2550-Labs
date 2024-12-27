@@ -31,11 +31,8 @@ def main():
         ratios = Ratios(Regime=elem)
     
 
-    # polytropic()
-    # massFlowRate()
 
-    # TS_diagram()
-
+    polytropic()
     return 0
 
 

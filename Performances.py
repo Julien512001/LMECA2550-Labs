@@ -26,6 +26,8 @@ def polytropic():
         tau_c, pi_c = df['c']
         tau_t, pi_t = df['t']
 
+
+        # !!!!! Attention à verifier les équations !!!!!
         ec[i] = (gamma-1)/gamma * np.log(pi_c)/np.log(tau_c)
         eta_c[i] = (pi_c**((gamma-1)/gamma) - 1 )/(tau_c - 1)
         et[i] = gamma/(gamma-1) * np.log(tau_t)/np.log(pi_t)

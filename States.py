@@ -30,6 +30,9 @@ class States:
         self.state5()
         self.state4()
 
+
+        print(f"mdot_1 = {self.get_mdot_0()}")
+
         self.__write_states()
 
     def state0(self):
@@ -63,7 +66,6 @@ class States:
 
     def state5(self):
         self.ps5, self.T5, self.u5 = solve_state5(self.u6, self.T6, self.ps6, self.pt6, self.Tt6)
-        # self.Tt5 = self.Tt6
         self.s5 = self.s6
 
     def state6(self):
@@ -153,8 +155,6 @@ class States:
         self.mdot_f = df['mdot_f'][index]*1e-3
         
 
-        self.Thrust = self.Thrust - df['Thrust'][0]
-        # self.Tt2 = df['Tt6'][0]
         self.T0 = df['Tt6'][0]
         self.Tt0 = self.T0
         self.Tt1 = self.T0
