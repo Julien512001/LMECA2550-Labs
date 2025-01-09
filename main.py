@@ -23,7 +23,8 @@ def main():
 
 
     for elem in RPM:
-        States(Regime=elem)
+        myState = States(Regime=elem)
+        print(myState.get_mdot_0())
 
 
 

@@ -30,9 +30,6 @@ class States:
         self.state5()
         self.state4()
 
-
-        print(f"mdot_1 = {self.get_mdot_0()}")
-
         self.__write_states()
 
     def state0(self):
